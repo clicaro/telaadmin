@@ -12,6 +12,7 @@ const Usuarios = () => {
       cpf: '123.456.789-0',
       email: 'junin.minecraft@gmail.com',
       status: 'Ativo',
+      empresa: 'Empresa A',
     },
   ]);
 
@@ -24,18 +25,25 @@ const Usuarios = () => {
     cpf: '',
     email: '',
     status: 'Ativo',
+    empresa: '', // Novo campo de empresa
   });
 
   // NOVOS estados para edição
   const [modoEdicao, setModoEdicao] = useState(false);
   const [idEdicao, setIdEdicao] = useState(null);
 
+  const empresas = [
+    { id: 1, nome: 'Empresa A' },
+    { id: 2, nome: 'Empresa B' },
+    { id: 3, nome: 'Empresa C' },
+  ];
+
   const abrirModal = () => setMostrarModal(true);
   const fecharModal = () => {
     setMostrarModal(false);
     setModoEdicao(false);
     setIdEdicao(null);
-    setNovoUsuario({ nome: '', cpf: '', email: '', status: 'Ativo' });
+    setNovoUsuario({ nome: '', cpf: '', email: '', status: 'Ativo', empresa: '' });
   };
 
   const handleChange = (e) => {
@@ -51,7 +59,8 @@ const Usuarios = () => {
       novoUsuario.nome.trim() &&
       novoUsuario.cpf.trim() &&
       novoUsuario.email.trim() &&
-      novoUsuario.status.trim()
+      novoUsuario.status.trim() &&
+      novoUsuario.empresa.trim() // Verifica o campo empresa
     ) {
       if (modoEdicao) {
         // Atualiza usuário existente
@@ -95,6 +104,7 @@ const Usuarios = () => {
       cpf: usuario.cpf,
       email: usuario.email,
       status: usuario.status,
+      empresa: usuario.empresa,
     });
     setModoEdicao(true);
     setIdEdicao(usuario.id);
@@ -113,6 +123,7 @@ const Usuarios = () => {
                 <th>CPF</th>
                 <th>Email</th>
                 <th>Status</th>
+                <th>Empresa</th> {/* Coluna para a empresa */}
                 <th className="acoes-coluna"></th>
               </tr>
             </thead>
@@ -123,6 +134,7 @@ const Usuarios = () => {
                   <td>{usuario.cpf}</td>
                   <td>{usuario.email}</td>
                   <td>{usuario.status}</td>
+                  <td>{usuario.empresa}</td> {/* Exibição da empresa */}
                   <td className="acoes">
                     <button
                       className="editar-btn"
@@ -200,6 +212,21 @@ const Usuarios = () => {
                   <option>Inativo</option>
                 </select>
               </label>
+              <label>
+                Empresa
+                <select
+                  name="empresa"
+                  value={novoUsuario.empresa}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecione uma empresa</option>
+                  {empresas.map((empresa) => (
+                    <option key={empresa.id} value={empresa.nome}>
+                      {empresa.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="botoes-modal">
                 <button type="submit" className="botao-submit">
                   {modoEdicao ? 'Salvar Alterações' : 'Salvar'}
@@ -226,4 +253,3 @@ const Usuarios = () => {
 };
 
 export default Usuarios;
-

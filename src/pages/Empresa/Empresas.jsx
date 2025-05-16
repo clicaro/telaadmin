@@ -12,9 +12,14 @@ const Empresas = () => {
       cnpj: '12.345.678/0001-90',
       transportadoras: 'Transportadora XYZ',
       status: 'Ativo',
+      usuariosVinculados: [
+        { nome: 'João da Silva', email: 'joao@empresa.com', cargo: 'Gerente' },
+        { nome: 'Maria Souza', email: 'maria@empresa.com', cargo: 'Analista' },
+      ],
     },
   ]);
 
+  const [empresaExpandidaId, setEmpresaExpandidaId] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
   const [idParaExcluir, setIdParaExcluir] = useState(null);
@@ -30,6 +35,7 @@ const Empresas = () => {
   const [idEdicao, setIdEdicao] = useState(null);
 
   const abrirModal = () => setMostrarModal(true);
+
   const fecharModal = () => {
     setMostrarModal(false);
     setModoEdicao(false);
@@ -54,11 +60,17 @@ const Empresas = () => {
       if (modoEdicao) {
         setEmpresas((prev) =>
           prev.map((empresa) =>
-            empresa.id === idEdicao ? { ...empresa, ...novaEmpresa, id: idEdicao } : empresa
+            empresa.id === idEdicao
+              ? { ...empresa, ...novaEmpresa, id: idEdicao }
+              : empresa
           )
         );
       } else {
-        const novo = { ...novaEmpresa, id: Date.now() };
+        const novo = {
+          ...novaEmpresa,
+          id: Date.now(),
+          usuariosVinculados: [],
+        };
         setEmpresas((prev) => [...prev, novo]);
       }
       fecharModal();
@@ -95,6 +107,10 @@ const Empresas = () => {
     abrirModal();
   };
 
+  const toggleExpandirEmpresa = (id) => {
+    setEmpresaExpandidaId((prevId) => (prevId === id ? null : id));
+  };
+
   return (
     <>
       <Header />
@@ -112,28 +128,50 @@ const Empresas = () => {
             </thead>
             <tbody>
               {empresas.map((empresa) => (
-                <tr key={empresa.id}>
-                  <td>{empresa.nome}</td>
-                  <td>{empresa.cnpj}</td>
-                  <td>{empresa.transportadoras}</td>
-                  <td>{empresa.status}</td>
-                  <td className="acoes">
-                    <button
-                      className="editar-btn"
-                      onClick={() => handleEditar(empresa)}
-                      aria-label={`Editar ${empresa.nome}`}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="excluir-btn"
-                      onClick={() => handleExcluir(empresa.id)}
-                      aria-label={`Excluir ${empresa.nome}`}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
-                </tr>
+                <React.Fragment key={empresa.id}>
+                  <tr>
+                    <td onClick={() => toggleExpandirEmpresa(empresa.id)} style={{ cursor: 'pointer' }}>
+                      {empresa.nome}
+                    </td>
+                    <td>{empresa.cnpj}</td>
+                    <td>{empresa.transportadoras}</td>
+                    <td>{empresa.status}</td>
+                    <td className="acoes">
+                      <button
+                        className="editar-btn"
+                        onClick={() => handleEditar(empresa)}
+                        aria-label={`Editar ${empresa.nome}`}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="excluir-btn"
+                        onClick={() => handleExcluir(empresa.id)}
+                        aria-label={`Excluir ${empresa.nome}`}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                  {empresaExpandidaId === empresa.id && (
+                    <tr className="usuarios-vinculados-row">
+                      <td colSpan="5">
+                        <strong>Usuários vinculados:</strong>
+                        <ul>
+                          {empresa.usuariosVinculados?.length > 0 ? (
+                            empresa.usuariosVinculados.map((user, index) => (
+                              <li key={index}>
+                                {user.nome} – {user.email} ({user.cargo})
+                              </li>
+                            ))
+                          ) : (
+                            <li>Nenhum usuário vinculado.</li>
+                          )}
+                        </ul>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -220,3 +258,4 @@ const Empresas = () => {
 };
 
 export default Empresas;
+
