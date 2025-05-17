@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import Header from '../../components/Headeradmin/Header';
 import ModalConfirmacao from '../../components/ModalConf/ModalConfirmacao';
+import { useServicos } from '../../components/ServicosContext/ServicosContext';
 import Style from './styles.css';
 
 const Empresas = () => {
+  const { servicos } = useServicos();
+
   const [empresas, setEmpresas] = useState([
     {
       id: 1,
       nome: 'Empresa Exemplo LTDA',
       cnpj: '12.345.678/0001-90',
-      transportadoras: 'Transportadora XYZ',
+      transportadoras: [1, 2], // IDs dos serviços
       status: 'Ativo',
       usuariosVinculados: [
         { nome: 'João da Silva', email: 'joao@empresa.com', cargo: 'Gerente' },
@@ -27,7 +30,7 @@ const Empresas = () => {
   const [novaEmpresa, setNovaEmpresa] = useState({
     nome: '',
     cnpj: '',
-    transportadoras: '',
+    transportadoras: [],
     status: 'Ativo',
   });
 
@@ -35,26 +38,31 @@ const Empresas = () => {
   const [idEdicao, setIdEdicao] = useState(null);
 
   const abrirModal = () => setMostrarModal(true);
-
   const fecharModal = () => {
     setMostrarModal(false);
     setModoEdicao(false);
     setIdEdicao(null);
-    setNovaEmpresa({ nome: '', cnpj: '', transportadoras: '', status: 'Ativo' });
+    setNovaEmpresa({ nome: '', cnpj: '', transportadoras: [], status: 'Ativo' });
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNovaEmpresa((prev) => ({ ...prev, [name]: value }));
+    const { name, value, options } = e.target;
+    if (name === 'transportadoras') {
+      const selecionados = Array.from(options)
+        .filter((option) => option.selected)
+        .map((option) => parseInt(option.value));
+      setNovaEmpresa((prev) => ({ ...prev, transportadoras: selecionados }));
+    } else {
+      setNovaEmpresa((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSalvar = (e) => {
     e.preventDefault();
-
     if (
       novaEmpresa.nome.trim() &&
       novaEmpresa.cnpj.trim() &&
-      novaEmpresa.transportadoras.trim() &&
+      novaEmpresa.transportadoras.length > 0 &&
       novaEmpresa.status.trim()
     ) {
       if (modoEdicao) {
@@ -75,7 +83,7 @@ const Empresas = () => {
       }
       fecharModal();
     } else {
-      alert('Por favor, preencha todos os campos.');
+      alert('Por favor, preencha todos os campos, incluindo pelo menos uma transportadora.');
     }
   };
 
@@ -121,67 +129,61 @@ const Empresas = () => {
               <tr>
                 <th>Razão Social</th>
                 <th>CNPJ</th>
-                <th>Transportadoras</th>
+                <th>Serviços</th>
                 <th>Status</th>
                 <th className="acoes-coluna"></th>
               </tr>
             </thead>
             <tbody>
-              {empresas.map((empresa) => (
-                <React.Fragment key={empresa.id}>
-                  <tr>
-                    <td onClick={() => toggleExpandirEmpresa(empresa.id)} style={{ cursor: 'pointer' }}>
-                      {empresa.nome}
-                    </td>
-                    <td>{empresa.cnpj}</td>
-                    <td>{empresa.transportadoras}</td>
-                    <td>{empresa.status}</td>
-                    <td className="acoes">
-                      <button
-                        className="editar-btn"
-                        onClick={() => handleEditar(empresa)}
-                        aria-label={`Editar ${empresa.nome}`}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="excluir-btn"
-                        onClick={() => handleExcluir(empresa.id)}
-                        aria-label={`Excluir ${empresa.nome}`}
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                  {empresaExpandidaId === empresa.id && (
-                    <tr className="usuarios-vinculados-row">
-                      <td colSpan="5">
-                        <strong>Usuários vinculados:</strong>
-                        <ul>
-                          {empresa.usuariosVinculados?.length > 0 ? (
-                            empresa.usuariosVinculados.map((user, index) => (
-                              <li key={index}>
-                                {user.nome} – {user.email} ({user.cargo})
-                              </li>
-                            ))
-                          ) : (
-                            <li>Nenhum usuário vinculado.</li>
-                          )}
-                        </ul>
+              {empresas.map((empresa) => {
+                const transportadorasNomes = empresa.transportadoras
+                  .map((id) => servicos.find((s) => s.id === id)?.nome)
+                  .filter(Boolean);
+
+                return (
+                  <React.Fragment key={empresa.id}>
+                    <tr>
+                      <td onClick={() => toggleExpandirEmpresa(empresa.id)} style={{ cursor: 'pointer' }}>
+                        {empresa.nome}
+                      </td>
+                      <td>{empresa.cnpj}</td>
+                      <td>{transportadorasNomes.join(', ')}</td>
+                      <td>{empresa.status}</td>
+                      <td className="acoes">
+                        <button className="editar-btn" onClick={() => handleEditar(empresa)}>
+                          <FaEdit />
+                        </button>
+                        <button className="excluir-btn" onClick={() => handleExcluir(empresa.id)}>
+                          <FaTrash />
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
+                    {empresaExpandidaId === empresa.id && (
+                      <tr className="usuarios-vinculados-row">
+                        <td colSpan="5">
+                          <strong>Usuários vinculados:</strong>
+                          <ul>
+                            {empresa.usuariosVinculados?.length > 0 ? (
+                              empresa.usuariosVinculados.map((user, index) => (
+                                <li key={index}>
+                                  {user.nome} – {user.email} ({user.cargo})
+                                </li>
+                              ))
+                            ) : (
+                              <li>Nenhum usuário vinculado.</li>
+                            )}
+                          </ul>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
 
           <div className="novo-empresa-container">
-            <button
-              className="novo-empresa-btn"
-              onClick={abrirModal}
-              aria-label="Adicionar nova empresa"
-            >
+            <button className="novo-empresa-btn" onClick={abrirModal}>
               <FaPlus />
             </button>
           </div>
@@ -213,21 +215,24 @@ const Empresas = () => {
                 />
               </label>
               <label>
-                Transportadoras
-                <input
-                  type="text"
+                Transportadoras (Selecione uma ou mais)
+                <select
                   name="transportadoras"
+                  multiple
+                  size={Math.min(servicos.length, 5)}
                   value={novaEmpresa.transportadoras}
                   onChange={handleChange}
-                />
+                >
+                  {servicos.map((servico) => (
+                    <option key={servico.id} value={servico.id}>
+                      {servico.nome}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Status
-                <select
-                  name="status"
-                  value={novaEmpresa.status}
-                  onChange={handleChange}
-                >
+                <select name="status" value={novaEmpresa.status} onChange={handleChange}>
                   <option>Ativo</option>
                   <option>Inativo</option>
                 </select>
@@ -258,4 +263,3 @@ const Empresas = () => {
 };
 
 export default Empresas;
-

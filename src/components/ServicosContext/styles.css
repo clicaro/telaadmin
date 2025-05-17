@@ -1,0 +1,26 @@
+/* Estilo para o select multiple das transportadoras */
+select[multiple] {
+    width: 100%;             /* ocupar toda largura do container */
+    height: 120px;           /* altura fixa para mostrar várias opções */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+  
+  select[multiple]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
+  /* Opcional: destaca a opção selecionada */
+  option:checked {
+    background-color: #007bff;
+    color: white;
+  }
+  

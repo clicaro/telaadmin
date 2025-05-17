@@ -1,27 +1,12 @@
-import React, { useState } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import Header from '../../components/Headeradmin/Header';
 import ModalConfirmacao from '../../components/ModalConf/ModalConfirmacao';
+import { useServicos } from '../../components/ServicosContext/ServicosContext';
 import Style from './styles.css';
 
 const Servicos = () => {
-  const [servicos, setServicos] = useState([
-    {
-      id: 1,
-      nome: 'Uber',
-      tiposCotacao: ['UberX', 'Uber Black'],
-    },
-    {
-      id: 2,
-      nome: '99',
-      tiposCotacao: ['99Pop', '99 Comfort'],
-    },
-    {
-      id: 3,
-      nome: 'Buser',
-      tiposCotacao: ['Executivo', 'Semi Leito'],
-    },
-  ]);
+  const { servicos, setServicos } = useServicos();
 
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
@@ -30,6 +15,7 @@ const Servicos = () => {
   const [novoServico, setNovoServico] = useState({
     nome: '',
     tiposCotacao: [''],
+    status: 'Ativo',
   });
 
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -40,62 +26,63 @@ const Servicos = () => {
     setMostrarModal(false);
     setModoEdicao(false);
     setIdEdicao(null);
-    setNovoServico({ nome: '', tiposCotacao: [''] });
+    setNovoServico({ nome: '', tiposCotacao: [''], status: 'Ativo' });
   };
 
-  const handleChangeNome = (e) => {
-    setNovoServico((prev) => ({ ...prev, nome: e.target.value }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNovoServico((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleChangeCotacao = (index, value) => {
-    const novaLista = [...novoServico.tiposCotacao];
-    novaLista[index] = value;
-    setNovoServico((prev) => ({ ...prev, tiposCotacao: novaLista }));
+  const handleCotacaoChange = (index, value) => {
+    const novasCotacoes = [...novoServico.tiposCotacao];
+    novasCotacoes[index] = value;
+    setNovoServico((prev) => ({ ...prev, tiposCotacao: novasCotacoes }));
   };
 
-  const adicionarCampoCotacao = () => {
-    setNovoServico((prev) => ({
-      ...prev,
-      tiposCotacao: [...prev.tiposCotacao, ''],
-    }));
+  const adicionarCotacao = () => {
+    setNovoServico((prev) => ({ ...prev, tiposCotacao: [...prev.tiposCotacao, ''] }));
   };
 
-  const removerCampoCotacao = (index) => {
-    const novaLista = [...novoServico.tiposCotacao];
-    novaLista.splice(index, 1);
-    setNovoServico((prev) => ({ ...prev, tiposCotacao: novaLista }));
+  const removerCotacao = (index) => {
+    const novasCotacoes = novoServico.tiposCotacao.filter((_, i) => i !== index);
+    setNovoServico((prev) => ({ ...prev, tiposCotacao: novasCotacoes }));
   };
 
   const handleSalvar = (e) => {
     e.preventDefault();
-    const nomeValido = novoServico.nome.trim();
-    const cotacoesValidas = novoServico.tiposCotacao.filter((c) => c.trim() !== '');
 
-    if (nomeValido && cotacoesValidas.length > 0) {
-      if (modoEdicao) {
-        setServicos((prev) =>
-          prev.map((s) =>
-            s.id === idEdicao ? { id: idEdicao, nome: nomeValido, tiposCotacao: cotacoesValidas } : s
-          )
-        );
-      } else {
-        const novo = {
-          id: Date.now(),
-          nome: nomeValido,
-          tiposCotacao: cotacoesValidas,
-        };
-        setServicos((prev) => [...prev, novo]);
-      }
-      fecharModal();
-    } else {
-      alert('Preencha o nome e pelo menos um tipo de cotação.');
+    const nomeValido = novoServico.nome.trim();
+    const cotacoesValidas = novoServico.tiposCotacao.map((c) => c.trim()).filter((c) => c);
+
+    if (!nomeValido || cotacoesValidas.length === 0) {
+      alert('Preencha todos os campos corretamente.');
+      return;
     }
+
+    const servicoFinal = {
+      id: modoEdicao ? idEdicao : Date.now(),
+      nome: nomeValido,
+      tiposCotacao: cotacoesValidas,
+      status: novoServico.status,
+    };
+
+    if (modoEdicao) {
+      setServicos((prev) =>
+        prev.map((s) => (s.id === idEdicao ? servicoFinal : s))
+      );
+    } else {
+      setServicos((prev) => [...prev, servicoFinal]);
+    }
+
+    fecharModal();
   };
 
   const handleEditar = (servico) => {
     setNovoServico({
       nome: servico.nome,
       tiposCotacao: [...servico.tiposCotacao],
+      status: servico.status,
     });
     setModoEdicao(true);
     setIdEdicao(servico.id);
@@ -113,21 +100,17 @@ const Servicos = () => {
     setIdParaExcluir(null);
   };
 
-  const cancelarExclusao = () => {
-    setMostrarConfirmacao(false);
-    setIdParaExcluir(null);
-  };
-
   return (
     <>
       <Header />
-      <main className="servicos-container">
-        <div className="servicos-card">
-          <table className="servicos-table">
+      <main className="empresas-container">
+        <div className="empresas-card">
+          <table className="empresas-table">
             <thead>
               <tr>
                 <th>Nome</th>
                 <th>Tipos de Cotação</th>
+                <th>Status</th>
                 <th className="acoes-coluna"></th>
               </tr>
             </thead>
@@ -136,11 +119,12 @@ const Servicos = () => {
                 <tr key={servico.id}>
                   <td>{servico.nome}</td>
                   <td>{servico.tiposCotacao.join(', ')}</td>
+                  <td>{servico.status}</td>
                   <td className="acoes">
-                    <button onClick={() => handleEditar(servico)} className="editar-btn" aria-label="Editar">
+                    <button onClick={() => handleEditar(servico)} className="editar-btn">
                       <FaEdit />
                     </button>
-                    <button onClick={() => handleExcluir(servico.id)} className="excluir-btn" aria-label="Excluir">
+                    <button onClick={() => handleExcluir(servico.id)} className="excluir-btn">
                       <FaTrash />
                     </button>
                   </td>
@@ -149,8 +133,8 @@ const Servicos = () => {
             </tbody>
           </table>
 
-          <div className="novo-servico-container">
-            <button onClick={abrirModal} className="novo-servico-btn" aria-label="Adicionar novo serviço">
+          <div className="novo-empresa-container">
+            <button onClick={abrirModal} className="novo-empresa-btn">
               <FaPlus />
             </button>
           </div>
@@ -164,33 +148,59 @@ const Servicos = () => {
             <form onSubmit={handleSalvar}>
               <label>
                 Nome
-                <input type="text" value={novoServico.nome} onChange={handleChangeNome} autoFocus />
+                <input
+                  type="text"
+                  name="nome"
+                  value={novoServico.nome}
+                  onChange={handleChange}
+                />
               </label>
-
               <label>Tipos de Cotação</label>
               {novoServico.tiposCotacao.map((cotacao, index) => (
-                <div key={index} className="linha-cotacao">
+                <div key={index} className="cotacao-item">
                   <input
                     type="text"
                     value={cotacao}
-                    onChange={(e) => handleChangeCotacao(index, e.target.value)}
+                    onChange={(e) => handleCotacaoChange(index, e.target.value)}
                   />
-                  {novoServico.tiposCotacao.length > 1 && (
-                    <button type="button" className="remover-tipo-btn" onClick={() => removerCampoCotacao(index)}>
-                      <FaMinus />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removerCotacao(index)}
+                    className="remover-tipo-btn"
+                  >
+                    -
+                  </button>
                 </div>
               ))}
-              <button type="button" className='adicionar-tipo-btn' onClick={adicionarCampoCotacao}>
-                <FaPlus /> Adicionar Cotação
+              <button
+                type="button"
+                onClick={adicionarCotacao}
+                className="adicionar-tipo-btn"
+              >
+                + Adicionar Cotação
               </button>
+
+              <label>
+                Status
+                <select
+                  name="status"
+                  value={novoServico.status}
+                  onChange={handleChange}
+                >
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+              </label>
 
               <div className="botoes-modal">
                 <button type="submit" className="botao-submit">
                   {modoEdicao ? 'Salvar Alterações' : 'Salvar'}
                 </button>
-                <button type="button" className="botao-cancelar" onClick={fecharModal}>
+                <button
+                  type="button"
+                  className="botao-cancelar"
+                  onClick={fecharModal}
+                >
                   Cancelar
                 </button>
               </div>
@@ -204,7 +214,7 @@ const Servicos = () => {
           titulo="Excluir Serviço"
           mensagem="Tem certeza que deseja excluir este serviço?"
           onConfirmar={confirmarExclusao}
-          onCancelar={cancelarExclusao}
+          onCancelar={() => setMostrarConfirmacao(false)}
         />
       )}
     </>
@@ -212,3 +222,4 @@ const Servicos = () => {
 };
 
 export default Servicos;
+
